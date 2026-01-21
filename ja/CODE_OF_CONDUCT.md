@@ -1,7 +1,7 @@
 # 行動規範
 
 This document is the code of conduct written in Japanese.
-English version is available at [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+English version is available at [CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md).
 
 ## 私たちの誓約
 

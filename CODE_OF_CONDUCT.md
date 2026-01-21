@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Japanese version is available at [CODE_OF_CONDUCT.ja.md](CODE_OF_CONDUCT.ja.md).
+Japanese version is available at [ja/CODE_OF_CONDUCT.md](ja/CODE_OF_CONDUCT.md).
 
 ## Our Pledge
 

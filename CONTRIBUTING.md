@@ -1,6 +1,6 @@
 # Contributing Guidelines
 
-Japanese version is available at [CONTRIBUTING.ja.md](CONTRIBUTING.ja.md).
+Japanese version is available at [ja/CONTRIBUTING.md](ja/CONTRIBUTING.md).
 
 Thank you for your interest in contributing to this project! We welcome contributions from everyone.
 

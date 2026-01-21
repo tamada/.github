@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[日本語版 (Japanese)](README.ja.md)
+[日本語版 (Japanese)](ja/README.md)
 
 ## Overview
 

@@ -2,16 +2,16 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+[English Version](../README.md)
+
 ## 概要
 
 このリポジトリには、GitHubリポジトリで使用するデフォルトのコミュニティヘルスファイルが含まれています。組織やユーザーアカウント内に `.github` リポジトリを配置すると、これらのファイルは独自バージョンを持たないすべてのリポジトリでデフォルトとして使用されます。
 
 ## 内容
 
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Contributor Covenant v2.1に基づくコミュニティ行動規範
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - プロジェクトへの貢献ガイドライン
-- **[CODE_OF_CONDUCT.ja.md](CODE_OF_CONDUCT.ja.md)** - 行動規範の日本語版
-- **[CONTRIBUTING.ja.md](CONTRIBUTING.ja.md)** - 貢献ガイドラインの日本語版
+- **[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)** - Contributor Covenant v2.1に基づくコミュニティ行動規範（[日本語版](CODE_OF_CONDUCT.md)）
+- **[CONTRIBUTING.md](../CONTRIBUTING.md)** - プロジェクトへの貢献ガイドライン（[日本語版](CONTRIBUTING.md)）
 
 ## 使い方
 
