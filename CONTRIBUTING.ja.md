@@ -1,5 +1,8 @@
 # コントリビューションガイドライン
 
+This document is the contributing guidelines written in Japanese.
+English version is available at [CONTRIBUTING.md](CONTRIBUTING.md).
+
 このプロジェクトへの貢献に興味を持っていただきありがとうございます！
 私たちはすべての人からの貢献を歓迎します。
 

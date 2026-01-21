@@ -1,5 +1,8 @@
 # 行動規範
 
+This document is the code of conduct written in Japanese.
+English version is available at [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
 ## 私たちの誓約
 
 私たちメンバー、コントリビューター、リーダーは、年齢、体の大きさ、目に見える・見えない障害、民族性、性的特徴、性同一性と表現、経験レベル、教育、社会経済的地位、国籍、外見、人種、宗教、性的アイデンティティと指向に関わらず、すべての人にとってハラスメントのない体験をコミュニティへの参加において提供することを誓います。
