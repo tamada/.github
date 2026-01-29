@@ -10,8 +10,8 @@ This repository contains default community health files for GitHub repositories.
 
 ## Contents
 
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community code of conduct based on Contributor Covenant v2.1 [Japanese version](CODE_OF_CONDUCT.ja.md)
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guidelines for contributing to projects [Japanese version](CONTRIBUTING.ja.md)
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community code of conduct based on Contributor Covenant v2.1 [Japanese version](ja/CODE_OF_CONDUCT.md)
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guidelines for contributing to projects [Japanese version](ja/CONTRIBUTING.md)
 
 ## Usage
 

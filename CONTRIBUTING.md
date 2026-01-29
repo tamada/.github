@@ -38,6 +38,8 @@ Thank you for your interest in contributing to this project! We welcome contribu
 
 ### Commit Message Format
 
+The commit message should follow the [conventional commits](https://www.conventionalcommits.org/en/) format.
+
 ```
 <type>: <subject>
 
@@ -48,7 +50,8 @@ Thank you for your interest in contributing to this project! We welcome contribu
 
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
-Example:
+#### Example:
+
 ```
 feat: add user authentication feature
 

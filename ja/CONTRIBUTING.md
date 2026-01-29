@@ -40,6 +40,8 @@ English version is available at [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ### コミットメッセージの形式
 
+コミットメッセージは、基本的には[コンベンショナルコミット](https://www.conventionalcommits.org/ja/v1.0.0/)に従ってください。
+
 ```
 <type>: <subject>
 
@@ -50,7 +52,8 @@ English version is available at [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 タイプ: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
-例:
+#### 例:
+
 ```
 feat: ユーザー認証機能を追加
 
@@ -71,7 +74,7 @@ Closes #123
 
 ## 行動規範
 
-このプロジェクトは[行動規範](CODE_OF_CONDUCT.ja.md)のもとで公開されています。
+このプロジェクトは[行動規範](ja/CODE_OF_CONDUCT.md)のもとで公開されています。
 このプロジェクトに参加することで、その条項に従うことに同意したものとみなされます。
 
 ## 質問がありますか？
