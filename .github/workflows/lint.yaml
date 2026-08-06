@@ -1,0 +1,39 @@
+# This repository's own CI. Not a reusable workflow.
+#
+# Everything here is a workflow file, so actionlint is the whole test suite:
+# there is nothing else to run, and a mistake in a reusable workflow is a
+# mistake in someone else's repository.
+
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # The two ignored patterns are actionlint's own metadata being out of
+      # date, not findings. actions/create-github-app-token has taken
+      # `client-id` since v2 and now marks `app-id` deprecated in favour of it;
+      # the copy of the action's inputs bundled with actionlint predates that.
+      # Both patterns name the action, so a real problem with any other action
+      # still fails the job.
+      # Pinned image rather than the upstream `curl | bash` installer: what this
+      # repository publishes ends up running in other people's repositories, so
+      # its own CI should not execute a script fetched from a moving branch.
+      - name: Run actionlint
+        run: |
+          docker run --rm --volume "$PWD:/repo" --workdir /repo \
+            rhysd/actionlint:1.7.12 -color \
+            -ignore 'input "client-id" is not defined in action "actions/create-github-app-token' \
+            -ignore 'missing input "app-id" which is required by action "actions/create-github-app-token'

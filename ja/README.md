@@ -1,8 +1,8 @@
 # .github
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 
-[English Version](../README.md)
+[English Version 🇺🇸](../README.md)
 
 ## 概要
 
@@ -10,8 +10,9 @@
 
 ## 内容
 
-- **[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)** - Contributor Covenant v2.1に基づくコミュニティ行動規範（[日本語版](CODE_OF_CONDUCT.md)）
+- **[CODE_OF_CONDUCT.md](../CODE_OF_CONDUCT.md)** - Contributor Covenant v2.1に基づくコミュニティ行動規範（[日本語版 🇯🇵](CODE_OF_CONDUCT.md)）
 - **[CONTRIBUTING.md](../CONTRIBUTING.md)** - プロジェクトへの貢献ガイドライン（[日本語版](CONTRIBUTING.md)）
+- **[.github/workflows/](../.github/workflows/README.md)** - 他のリポジトリから `uses:` で呼び出す再利用可能ワークフロー（[日本語版 🇯🇵](../.github/workflows/README.ja.md)）
 
 ## 使い方
 

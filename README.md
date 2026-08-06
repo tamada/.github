@@ -1,8 +1,8 @@
 # .github
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-[日本語版 (Japanese)](ja/README.md)
+[日本語版 (Japanese 🇯🇵)](ja/README.md)
 
 ## Overview
 
@@ -10,8 +10,9 @@ This repository contains default community health files for GitHub repositories.
 
 ## Contents
 
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community code of conduct based on Contributor Covenant v2.1 [Japanese version](ja/CODE_OF_CONDUCT.md)
+- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** - Community code of conduct based on Contributor Covenant v2.1 [Japanese version 🇯🇵](ja/CODE_OF_CONDUCT.md)
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Guidelines for contributing to projects [Japanese version](ja/CONTRIBUTING.md)
+- **[.github/workflows/](.github/workflows/README.md)** - Reusable workflows that other repositories call with `uses:` [Japanese version 🇯🇵](.github/workflows/README.ja.md)
 
 ## Usage
 

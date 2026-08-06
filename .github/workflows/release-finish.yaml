@@ -1,0 +1,90 @@
+# Publishes the draft release opened by release-start.
+#
+# This exists as its own workflow for one reason: which token takes the draft
+# off decides whether anything downstream ever hears about the release.
+#
+#   > With the exception of workflow_dispatch and repository_dispatch, other
+#   > GITHUB_TOKEN-triggered events do not create workflow runs at all.
+#
+# So a release published with GITHUB_TOKEN fires no `release: published`, and a
+# workflow waiting on that event stays silent with nothing to show for it — no
+# failed run, no log, just nothing. Publishing with a GitHub App token instead
+# makes the event behave like any other.
+#
+# Pass the App credentials to get that. Without them the release is still
+# published, using GITHUB_TOKEN, and the job says plainly that downstream
+# workflows will not run.
+#
+# Usage:
+#
+#   jobs:
+#     finish:
+#       needs: [start, build]
+#       uses: tamada/.github/.github/workflows/release-finish.yaml@v1
+#       with:
+#         tag: ${{ needs.start.outputs.tag }}
+#       permissions:
+#         contents: write
+#       secrets: inherit
+#
+# The two secrets are named the way repository secrets have to be named —
+# letters, digits and underscores, nothing else — so `secrets: inherit` carries
+# them across. Hyphenated names would look tidier here and would never once
+# arrive, because no repository secret can be named to match them.
+
+name: release-finish
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: >-
+          Git tag of the release to publish, with the leading v (v0.0.5) —
+          exactly what release-start puts in its `tag` output, so it can be
+          handed straight over.
+        type: string
+        required: true
+    secrets:
+      APP_CLIENT_ID:
+        description: >-
+          Client ID of a GitHub App allowed to edit releases. Publishing with
+          its token is what lets `release: published` reach other workflows.
+        required: false
+      APP_PRIVATE_KEY:
+        description: Private key of that App.
+        required: false
+
+jobs:
+  finish:
+    runs-on: ubuntu-latest
+    # Read in a condition below. Comparing it against "" neither prints nor
+    # exposes it; secrets stay masked in logs either way.
+    env:
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+
+    steps:
+      - name: Generate App token
+        id: app-token
+        if: env.APP_PRIVATE_KEY != ''
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.APP_CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Warn that downstream workflows will not run
+        if: env.APP_PRIVATE_KEY == ''
+        run: |
+          echo "::warning::publishing with GITHUB_TOKEN; no 'release: published' event will be delivered, so workflows waiting on one will not run. Pass APP_CLIENT_ID and APP_PRIVATE_KEY to change that."
+
+      # No checkout: `gh` resolves the repository from the git remote when it
+      # is not told which one to use, and there is no remote here. Naming it
+      # with --repo is what makes the step work in an empty workspace.
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release edit "$TAG" --repo "$REPO" --draft=false
+          echo "published $TAG of $REPO" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,78 @@
+# This repository's own release. Not a reusable workflow — it is the caller.
+#
+# Everything under `uses: ./` is this repository eating its own cooking: a local
+# reference takes the called workflow from the same commit, so a release runs the
+# workflows as they are on main, not as they were tagged. A change that breaks
+# release-start fails here, before it is tagged and before anyone else gets it.
+#
+# Cutting a release is the flow the README describes: branch releases/vX.Y.Z,
+# open a pull request onto main, merge it.
+
+name: release
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  start:
+    if: startsWith(github.head_ref, 'release') && github.event.pull_request.merged == true
+    uses: ./.github/workflows/release-start.yaml
+    permissions:
+      contents: write
+
+  # Callers pin `@v1`, so v1 has to be made to point at the release that just
+  # happened. This lives here rather than in release-start because moving a
+  # major tag is something a repository that publishes workflows or actions
+  # needs, and almost nothing else does.
+  major-version-tag:
+    needs: start
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Move the major version tag
+        env:
+          TAG: ${{ needs.start.outputs.tag }}
+          VERSION: ${{ needs.start.outputs.version }}
+        run: |
+          # A pre-release is not what @v1 should hand to everyone who never
+          # asked for one, so leave the major tag where it is. Build metadata
+          # (1.2.3+build) is still a release; only a hyphen marks a pre-release.
+          case "$VERSION" in
+            *-*)
+              echo "::notice::$TAG is a pre-release; leaving the major version tag where it is"
+              exit 0
+              ;;
+          esac
+
+          # v1.2.3 -> v1
+          major="${TAG%%.*}"
+
+          # start pushed $TAG moments ago, in a different job. Fetch rather than
+          # trust the checkout to have seen it.
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+
+          git tag --force "$major" "$TAG"
+          git push --force origin "$major"
+          echo "moved $major to $TAG" >> "$GITHUB_STEP_SUMMARY"
+
+  finish:
+    needs: [start, major-version-tag]
+    uses: ./.github/workflows/release-finish.yaml
+    with:
+      tag: ${{ needs.start.outputs.tag }}
+    permissions:
+      contents: write
+    secrets: inherit
