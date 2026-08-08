@@ -1,0 +1,99 @@
+# Builds a Hugo site and pushes it onto a branch, which GitHub Pages serves.
+#
+# The sibling of build-hugo-and-publish.yaml, which publishes the same site the
+# other way GitHub offers — as a Pages artifact, committing nothing. They differ
+# only in where the built site goes, so the choice is which file you call:
+#
+#   build-hugo-and-publish.yaml            artifact; Pages source = GitHub Actions
+#   build-hugo-and-publish-to-branch.yaml  branch;   Pages source = Deploy from a branch
+#
+# The repository setting has to match the file you call. They are the same
+# switch seen from two ends, and a mismatch is quiet: the run goes green and the
+# published site does not change.
+#
+# Take the artifact one unless something pulls you the other way. This one earns
+# its keep when you want the generated site in git history where you can look at
+# it, when you are publishing into a different repository, or when the Actions
+# source is not available to you.
+#
+# Usage:
+#
+#   jobs:
+#     publish:
+#       uses: tamada/.github/.github/workflows/build-hugo-and-publish-to-branch.yaml@v1
+#       with:
+#         workdir: docs
+#       permissions:
+#         contents: write
+
+name: Build the site by Hugo and Publish it to a branch
+
+on:
+  workflow_call:
+    inputs:
+      workdir:
+        description: "The directory to build the site in"
+        type: string
+        default: "."
+      branch:
+        description: >-
+          The branch (or any git ref) to build the site from. Left empty it is
+          the ref that triggered the caller's run, which is what you want for
+          the usual "push to the default branch" trigger. This is the source,
+          not the destination — see publish-branch for that.
+        type: string
+        default: ""
+      hugo-version:
+        description: "The version of Hugo to use"
+        type: string
+        default: "latest"
+      publish-branch:
+        description: The branch the built site is pushed onto.
+        type: string
+        default: gh-pages
+
+# Unlike the artifact method, this one writes to the repository, and that is the
+# whole of what it needs: no pages: write, no id-token: write.
+permissions:
+  contents: write
+
+# Two runs pushing the publish branch at once would have one of them rebase or
+# lose. Never cancel one in flight, though — a half-pushed site is worse than a
+# late one.
+concurrency:
+  group: publish-to-branch
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.branch }}
+          # Hugo themes are commonly vendored as submodules; without this the
+          # build fails on a missing layout rather than on a missing checkout.
+          submodules: recursive
+
+      - name: Setup hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: ${{ inputs.hugo-version }}
+          extended: true
+
+      # working-directory rather than `cd` in the script: the value is placed by
+      # the runner, not spliced into a shell command line, so a caller cannot
+      # smuggle anything through it.
+      - name: Build and update site
+        working-directory: ${{ inputs.workdir }}
+        run: hugo --minify
+
+      - name: Push the site onto the publish branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ inputs.workdir }}/public
+          publish_branch: ${{ inputs.publish-branch }}

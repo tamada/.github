@@ -17,7 +17,8 @@ uses: tamada/.github/.github/workflows/<file>.yaml@<ref>
 
 | ワークフロー | 種別 | 目的 |
 |--------------|------|------|
-| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | 再利用可能 | Hugoでサイトをビルドし、GitHub Pagesへデプロイする。 |
+| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | 再利用可能 | Hugoでサイトをビルドし、アーティファクトとしてGitHub Pagesへデプロイする。 |
+| [`build-hugo-and-publish-to-branch.yaml`](#build-hugo-and-publish-to-branchyaml) | 再利用可能 | Hugoでサイトをビルドし、Pagesが配信するブランチへpushする。 |
 | [`release-start.yaml`](#release-startyaml) | 再利用可能 | リリースにタグを打ち、ドラフトとして作成する。 |
 | [`release-finish.yaml`](#release-finishyaml) | 再利用可能 | `release-start.yaml` で作成したドラフトを公開し、`release: published` を実際に発火させる。 |
 | [`release.yaml`](#このリポジトリ自身のワークフロー) | このリポジトリ用 | 上の2つを呼び出して、このリポジトリをリリースする。 |
@@ -68,13 +69,50 @@ uses: tamada/.github/.github/workflows/<file>.yaml@<ref>
 制限も2つ挙げておきます。通常の使い方でどちらにも近づくことはありませんが、連鎖は最大10段、
 1つのワークフローファイルから呼べる異なる再利用可能ワークフローは最大50個です。
 
+## Hugoサイトを公開する
+
+これには2つのワークフローがあり、GitHubがPagesサイトを配信する2つの方式それぞれに対応します。
+ビルド部分は同一で、ビルド結果の行き先だけが違います。したがって選択は「どちらのファイルを
+呼ぶか」になります。
+
+| 呼ぶファイル | サイトの行き先 | 必要なリポジトリ設定 |
+|--------------|----------------|----------------------|
+| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | Pagesアーティファクトとしてアップロードされデプロイされる。コミットは発生しない。 | *Settings → Pages → Source* = **GitHub Actions** |
+| [`build-hugo-and-publish-to-branch.yaml`](#build-hugo-and-publish-to-branchyaml) | ブランチへpushされ、Pagesがそれを配信する。 | *Settings → Pages → Source* = **Deploy from a branch**（対象ブランチを指定） |
+
+**リポジトリ設定は、呼ぶファイルと一致していなければなりません。** この2つは同じスイッチを両端から
+見たもので、食い違ったときの現れ方が最悪です。実行は緑のまま終わり、公開されているサイトだけが
+変わりません。
+
+理由がなければアーティファクト方式を選んでください。ブランチ方式が活きるのは、生成されたサイトを
+gitの履歴に残して確認したり差分を見たりしたい場合、別のリポジトリへ公開する場合、あるいはActionsを
+ソースにできない場合です。
+
+必要な権限も異なります。ここも間違えやすい点です。
+
+| ワークフロー | 与える権限 |
+|--------------|------------|
+| `build-hugo-and-publish.yaml` | `contents: read`、`pages: write`、`id-token: write` |
+| `build-hugo-and-publish-to-branch.yaml` | `contents: write` |
+
+以下は、断りのない限り両方に当てはまります。
+
+**`baseURL` は利用者の責任です。** ビルドは `hugo --minify` を実行するだけなので、生成される
+リンクに入るのはHugo設定ファイルの `baseURL` です。Pagesが実際にサイトを配信する場所と食い違って
+いると、ページ自体は表示されるのにスタイルシートや内部リンクだけが別の場所を指します。設定ミスと
+いうよりテーマが壊れているように見える種類の失敗なので、ここを疑ってください。
+
+**サブモジュールは再帰的にチェックアウトします。** Hugoのテーマはサブモジュールとして取り込まれる
+ことが多いためです。取得されていないサブモジュールは「レイアウトが見つからない」というエラーとして
+現れ、まったく見当違いの場所を探すことになります。
+
+**どちらにも出力はありません。** アーティファクト方式はデプロイ先URLを実行結果の `github-pages`
+デプロイメントに記録します。ブランチ方式では、公開ブランチ自体が記録になります。
+
 ## `build-hugo-and-publish.yaml`
 
-Hugo（extended版）でサイトをビルドし、GitHub Pagesへデプロイします。
-
-最初の実行前に、*Settings → Pages → Build and deployment → Source* を **GitHub Actions**
-に設定してください。設定がないとデプロイステップが失敗します。このワークフローが代わりにPagesを
-有効化することはありません。
+Hugo（extended版）でサイトをビルドし、Pagesアーティファクトとしてアップロードしてデプロイします。
+リポジトリには何もコミットされません。
 
 ```yaml
 name: publish
@@ -104,25 +142,53 @@ jobs:
 | `branch` | *(空)* | ビルドするgit ref。空の場合は呼び出し側の実行を起動したrefになり、通常のpushトリガーではこれが期待どおりです。 |
 | `hugo-version` | `latest` | Hugoのバージョン。常にextended版です。 |
 
-### 出力
-
-ありません。デプロイ先URLは呼び出し側に返されるのではなく、実行結果の `github-pages`
-デプロイメント上で確認できます。
-
 ### 補足
-
-**`baseURL` は利用者の責任です。** ビルドは `hugo --minify` を実行するだけなので、生成される
-リンクに入るのはHugo設定ファイルの `baseURL` です。Pagesが実際にサイトを配信する場所と食い違って
-いると、ページ自体は表示されるのにスタイルシートや内部リンクだけが別の場所を指します。設定ミスと
-いうよりテーマが壊れているように見える種類の失敗なので、ここを疑ってください。
-
-**サブモジュールは再帰的にチェックアウトします。** Hugoのテーマはサブモジュールとして取り込まれる
-ことが多いためです。取得されていないサブモジュールは「レイアウトが見つからない」というエラーとして
-現れ、まったく見当違いの場所を探すことになります。
 
 **デプロイは `pages` という並行実行グループで直列化され、途中でキャンセルされることはありません。**
 GitHubは2つ目の同時デプロイをキューに入れず拒否しますし、実行中のものをキャンセルすると、そこまで
 デプロイされた中途半端な状態のままサイトが残るためです。
+
+## `build-hugo-and-publish-to-branch.yaml`
+
+同じサイトを同じ手順でビルドし、そのあとブランチへpushします。Pagesのソースが Actions ではなく
+ブランチのときに配信されるのが、このブランチです。
+
+```yaml
+name: publish
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    uses: tamada/.github/.github/workflows/build-hugo-and-publish-to-branch.yaml@v1
+    with:
+      workdir: docs
+      # branch: main
+      # hugo-version: latest
+      # publish-branch: gh-pages
+    permissions:
+      contents: write
+```
+
+### 入力
+
+| 入力 | デフォルト | 意味 |
+|------|------------|------|
+| `workdir` | `.` | Hugoサイトのあるディレクトリ。サイトは `<workdir>/public` から取得されます。 |
+| `branch` | *(空)* | ビルド**元**のgit ref。空の場合は呼び出し側の実行を起動したrefになります。 |
+| `hugo-version` | `latest` | Hugoのバージョン。常にextended版です。 |
+| `publish-branch` | `gh-pages` | ビルドしたサイトをpushする**先**のブランチ。 |
+
+`branch` と `publish-branch` はそれぞれ入力元と出力先です。前者は読み、後者は書きます。両方を持つ
+のはこのワークフローだけなので、名前は二度読む価値があります。
+
+### 補足
+
+**pushは `publish-to-branch` という並行実行グループで直列化され、途中でキャンセルされることは
+ありません。** 2つの実行が同時に公開ブランチへpushすると、片方がrebaseするか失われることになり、
+中途半端にpushされたサイトは、遅れて反映されるサイトより悪いためです。
 
 ## `release-start.yaml`
 
@@ -365,6 +431,7 @@ jobs:
 | `version '…' contains characters that do not belong in a version` | 多くはスラッシュ。`releases/v0.0.5/hotfix` はそのままだと `/` 入りのタグになってしまう。 |
 | リリースは公開されるのに、`release: published` を待つワークフローが動かない | Appの資格情報がなく `GITHUB_TOKEN` で公開されている。実行ログの警告を確認し、[GitHub Appの設定](#github-appの設定)を参照してください。 |
 | 既存のタグがあってタグ作成に失敗する | そのバージョンはすでにリリース済みです。タグは記録なので、動かすのではなくバージョンを上げてください。 |
-| Pagesを一度も公開していないリポジトリでデプロイが失敗する | PagesのSourceがGitHub Actionsになっていない。 |
+| Pagesを一度も公開していないリポジトリでデプロイが失敗する | PagesのSourceがGitHub Actionsになっていないのに `build-hugo-and-publish.yaml` を呼んでいる。 |
+| 実行は緑なのに公開されているサイトが変わらない | 呼んでいるワークフローとリポジトリのPages Sourceが食い違っている。ブランチへpushしているのにPagesがActionsのアーティファクトを配信している、またはその逆。 |
 | デプロイはされるがスタイルとリンクが壊れる | Hugo設定の `baseURL` が、Pagesの実際の配信先と一致していない。 |
 | Hugoがレイアウト不足で失敗する | テーマのサブモジュールが取得されていない。空ディレクトリではなくサブモジュールとしてコミットされているか確認してください。 |

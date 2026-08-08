@@ -17,7 +17,8 @@ wrong fails the run before any job starts, with `invalid value workflow referenc
 
 | Workflow | Kind | Purpose |
 |----------|------|---------|
-| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | reusable | Build a Hugo site and deploy it to GitHub Pages. |
+| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | reusable | Build a Hugo site and deploy it to GitHub Pages as an artifact. |
+| [`build-hugo-and-publish-to-branch.yaml`](#build-hugo-and-publish-to-branchyaml) | reusable | Build a Hugo site and push it onto a branch for Pages to serve. |
 | [`release-start.yaml`](#release-startyaml) | reusable | Tag a release and open it as a draft. |
 | [`release-finish.yaml`](#release-finishyaml) | reusable | Publish that draft created by `release-start.yaml`, so `release: published` actually fires. |
 | [`release.yaml`](#this-repositorys-own-workflows) | this repository | Releases this repository, by calling the two above. |
@@ -72,13 +73,52 @@ Two limits are worth knowing, though neither is close for normal use: a chain ma
 be up to ten levels deep, and one workflow file may call up to 50 distinct
 reusable workflows.
 
+## Publishing a Hugo site
+
+There are two workflows for this, one for each of the two ways GitHub serves a
+Pages site. They build identically and differ only in where the built site goes,
+so the choice is which file you call.
+
+| Call this | Where the site goes | Repository setting it needs |
+|-----------|---------------------|-----------------------------|
+| [`build-hugo-and-publish.yaml`](#build-hugo-and-publishyaml) | Uploaded as a Pages artifact and deployed. Nothing is committed. | *Settings → Pages → Source* = **GitHub Actions** |
+| [`build-hugo-and-publish-to-branch.yaml`](#build-hugo-and-publish-to-branchyaml) | Pushed onto a branch, which Pages serves. | *Settings → Pages → Source* = **Deploy from a branch**, pointed at that branch |
+
+**The repository setting has to match the file you call.** They are the same
+switch seen from two ends, and a mismatch is quiet in the worst way: the run
+goes green and the published site does not change.
+
+Take the artifact one unless something pulls you the other way. The branch one
+earns its keep when you want the generated site in git history where you can
+look at it or diff it, when you are publishing into a different repository, or
+when the Actions source is not available to you.
+
+They also need different permissions, which is the other thing to get right:
+
+| Workflow | Grant |
+|----------|-------|
+| `build-hugo-and-publish.yaml` | `contents: read`, `pages: write`, `id-token: write` |
+| `build-hugo-and-publish-to-branch.yaml` | `contents: write` |
+
+Everything below applies to both, except where it says otherwise.
+
+**`baseURL` is your responsibility.** The build runs `hugo --minify` and nothing
+else, so the `baseURL` in your Hugo configuration is what ends up in the generated
+links. If it does not match where Pages actually serves the site, the pages load
+but the stylesheets and internal links point somewhere wrong — a failure that
+looks like a broken theme rather than a misconfiguration.
+
+**Submodules are checked out recursively**, because Hugo themes are so often
+vendored that way. A missing submodule otherwise surfaces as a missing layout,
+which sends you looking in the wrong place entirely.
+
+**Neither has outputs.** The artifact one records the deployed URL on the run's
+`github-pages` deployment; for the branch one, the publish branch is the record.
+
 ## `build-hugo-and-publish.yaml`
 
-Builds a Hugo site with the extended edition and deploys it to GitHub Pages.
-
-Before the first run, set *Settings → Pages → Build and deployment → Source* to
-**GitHub Actions**. Without it the deploy step fails; the workflow does not enable
-Pages on your behalf.
+Builds a Hugo site with the extended edition, uploads it as a Pages artifact and
+deploys it. Nothing is committed to the repository.
 
 ```yaml
 name: publish
@@ -108,27 +148,55 @@ jobs:
 | `branch` | *(empty)* | Git ref to build. Empty means the ref that triggered the caller's run, which is what you want for the usual push trigger. |
 | `hugo-version` | `latest` | Hugo version. Always the extended edition. |
 
-### Outputs
-
-None. The deployed URL is visible on the run's `github-pages` deployment rather
-than being handed back to the caller.
-
 ### Notes
-
-**`baseURL` is your responsibility.** The build runs `hugo --minify` and nothing
-else, so the `baseURL` in your Hugo configuration is what ends up in the generated
-links. If it does not match where Pages actually serves the site, the pages load
-but the stylesheets and internal links point somewhere wrong — a failure that
-looks like a broken theme rather than a misconfiguration.
-
-**Submodules are checked out recursively**, because Hugo themes are so often
-vendored that way. A missing submodule otherwise surfaces as a missing layout,
-which sends you looking in the wrong place entirely.
 
 **Deployments are serialised** on a `pages` concurrency group and are never
 cancelled mid-flight: GitHub rejects a second concurrent deployment rather than
 queueing it, and cancelling one already running would leave the site on whatever
 had been deployed so far.
+
+## `build-hugo-and-publish-to-branch.yaml`
+
+Builds the same site the same way, then pushes it onto a branch instead — which
+is what Pages serves when its source is a branch rather than Actions.
+
+```yaml
+name: publish
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    uses: tamada/.github/.github/workflows/build-hugo-and-publish-to-branch.yaml@v1
+    with:
+      workdir: docs
+      # branch: main
+      # hugo-version: latest
+      # publish-branch: gh-pages
+    permissions:
+      contents: write
+```
+
+### Inputs
+
+| Input | Default | Meaning |
+|-------|---------|---------|
+| `workdir` | `.` | Directory holding the Hugo site. The site is taken from `<workdir>/public`. |
+| `branch` | *(empty)* | Git ref to build **from**. Empty means the ref that triggered the caller's run. |
+| `hugo-version` | `latest` | Hugo version. Always the extended edition. |
+| `publish-branch` | `gh-pages` | Branch the built site is pushed **onto**. |
+
+`branch` and `publish-branch` are source and destination: the first is read, the
+second is written. Only this workflow has both, which is why the names are worth
+reading twice.
+
+### Notes
+
+**Pushes are serialised** on a `publish-to-branch` concurrency group and are
+never cancelled mid-flight. Two runs pushing the branch at once would have one
+of them rebase or lose, and a half-pushed site is worse than a late one.
 
 ## `release-start.yaml`
 
@@ -383,6 +451,7 @@ moving branch.
 | `version '…' contains characters that do not belong in a version` | Usually a slash: `releases/v0.0.5/hotfix` would otherwise become a tag with a `/` in it. |
 | The release is published, but a workflow waiting on `release: published` never runs | No App credentials, so `GITHUB_TOKEN` published it. Check the run for the warning; see [Setting up the GitHub App](#setting-up-the-github-app). |
 | Tag creation fails on an existing tag | That version was already released. The tag is the record; bump the version rather than moving it. |
-| Pages deploy fails on a repository that has never published | Pages source is not set to GitHub Actions. |
+| Pages deploy fails on a repository that has never published | Pages source is not set to GitHub Actions, but `build-hugo-and-publish.yaml` was called. |
+| The run is green but the published site never changes | The workflow called and the repository's Pages source disagree — pushing to a branch while Pages serves the Actions artifact, or the reverse. |
 | The site deploys but styles and links are broken | `baseURL` in the Hugo configuration does not match where Pages serves the site. |
 | Hugo fails on a missing layout | The theme is a submodule that was not fetched — check that it is committed as a submodule and not an empty directory. |
