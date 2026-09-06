@@ -12,11 +12,13 @@ name: release
 
 on:
   pull_request:
+    branches:
+      - main
     types: [closed]
 
 jobs:
   start:
-    if: startsWith(github.head_ref, 'release') && github.event.pull_request.merged == true
+    if: startsWith(github.head_ref, 'releases/v') && github.event.pull_request.merged == true
     uses: ./.github/workflows/release-start.yaml
     permissions:
       contents: write
