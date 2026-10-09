@@ -13,6 +13,10 @@ Thank you for your interest in contributing to this project! We welcome contribu
 - Provide clear description and steps to reproduce
 - Include relevant environment details
 
+### Before You Start
+
+Please comment on the issue to declare that you are working on it before opening a pull request, including for `good first issue`. Pull requests that are clearly automated or submitted without human review may be closed without discussion.
+
 ### Submitting Pull Requests
 
 1. **Fork the repository** and create your branch from `main`
