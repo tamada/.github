@@ -256,6 +256,7 @@ requests from reaching a workflow that would only fail on them.
 | `version-branch-prefixes` | `releases/v release/v` | Space-separated prefixes; what follows the first matching one is the version. |
 | `tag-branch` | `main` | Branch checked out and tagged. |
 | `appname` | *(repository name)* | Application name, for later jobs that name artefacts. Correct whenever the binary is named after its repository. |
+| `release-notes` | *(empty)* | Path to a markdown file with the release notes. Empty means GitHub generates them; otherwise the file is passed to `gh release create --notes-file` instead. |
 
 ### Outputs
 

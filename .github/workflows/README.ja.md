@@ -247,6 +247,7 @@ jobs:
 | `version-branch-prefixes` | `releases/v release/v` | 空白区切りのプレフィックス。最初に一致したものの後ろがバージョンになります。 |
 | `tag-branch` | `main` | チェックアウトしてタグを打つブランチ。 |
 | `appname` | *(リポジトリ名)* | 成果物の命名に使うアプリケーション名。バイナリ名がリポジトリ名と同じなら常に正しい値です。 |
+| `release-notes` | *(空)* | リリースノートを記したマークダウンファイルのパス。空なら GitHub が自動生成し、指定すると `gh release create --notes-file` にそのファイルを渡します。 |
 
 ### 出力
 
